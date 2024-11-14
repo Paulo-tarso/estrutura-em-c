@@ -1,106 +1,121 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Estrutura do nó da pilha
+// Estrutura do nó da árvore
 struct Node {
     int data;
-    struct Node* next;
+    struct Node *left;
+    struct Node *right;
 };
 
-// Inicializa a pilha (topo aponta para NULL)
-void initialize(struct Node** top_ref) {
-    *top_ref = NULL;
+// Estrutura da fila para armazenar os valores na ordem de inserção
+struct Queue {
+    int data;
+    struct Queue* next;
+};
+
+// Função para inicializar a árvore (retorna NULL, pois a árvore começa vazia)
+struct Node* init() {
+    return NULL;
 }
 
-// Função para inserir um nó no topo da pilha
-void push(struct Node** top_ref, int new_data) {
-    struct Node* new_node = (struct Node*) malloc(sizeof(struct Node));
+// Função para criar um novo nó
+struct Node* create(int data) {
+    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
+    if (!newNode) { printf("Erro ao alocar memória.\n"); return NULL; }
+    newNode->data = data;
+    newNode->left = newNode->right = NULL;
+    return newNode;
+}
 
-    if (!new_node) {
-        printf("Erro: Memória insuficiente.\n");
-        return;
+// Função para inserir um nó na árvore
+struct Node* insert(struct Node* root, int data) {
+    if (root == NULL) return create(data);
+    if (data < root->data) root->left = insert(root->left, data);
+    else if (data > root->data) root->right = insert(root->right, data);
+    return root;
+}
+
+// Função para enfileirar um valor
+void enqueue(struct Queue** queue, int value) {
+    struct Queue* newNode = (struct Queue*)malloc(sizeof(struct Queue));
+    newNode->data = value;
+    newNode->next = NULL;
+
+    if (*queue == NULL) {
+        *queue = newNode;
+    } else {
+        struct Queue* temp = *queue;
+        while (temp->next != NULL) {
+            temp = temp->next;
+        }
+        temp->next = newNode;
     }
-
-    new_node->data = new_data;
-    new_node->next = *top_ref;
-
-    *top_ref = new_node;
 }
 
-// Função para remover o nó do topo da pilha
-int pop(struct Node** top_ref) {
-    if (*top_ref == NULL) {
-        printf("Erro: Pilha vazia.\n");
-        return -1;  // Valor de erro
+// Função para imprimir a fila na ordem de inserção
+void printQueue(struct Queue* queue) {
+    while (queue != NULL) {
+        printf("%d ", queue->data);
+        queue = queue->next;
     }
-
-    struct Node* temp = *top_ref;
-    int popped_data = temp->data;
-
-    *top_ref = temp->next;
-
-    free(temp);
-
-    return popped_data;
 }
 
-// Função para verificar se a pilha está vazia
-int isEmpty(struct Node* top) {
-    return top == NULL;
-}
-
-// Função para exibir os elementos da pilha
-void printStack(struct Node* top) {
-    if (top == NULL) {
-        printf("A pilha está vazia.\n");
-        return;
-    }
-
-    struct Node* temp = top;
-    while (temp != NULL) {
-        printf("%d -> ", temp->data);
-        temp = temp->next;
-    }
-    printf("NULL\n");
-}
-
-// Função para reinicializar a pilha
-void reinitialize(struct Node** top_ref) {
-    struct Node* current = *top_ref;
-    struct Node* next_node;
+// Função para inverter a fila
+void reverseQueue(struct Queue** queue) {
+    struct Queue* prev = NULL;
+    struct Queue* current = *queue;
+    struct Queue* next = NULL;
 
     while (current != NULL) {
-        next_node = current->next;
-        free(current);
-        current = next_node;
+        next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
     }
 
-    *top_ref = NULL;  // Pilha reinicializada
+    *queue = prev;
 }
 
-// Função principal
+// Função para imprimir a árvore em ordem de inserção (usando fila)
+void printInInsertionOrder(struct Node* root, struct Queue** queue) {
+    if (root == NULL) return;
+
+    // Enfileira o valor do nó conforme é inserido
+    enqueue(queue, root->data);
+
+    // Continue a travessia em pré-ordem (primeiro o nó, depois a esquerda, depois a direita)
+    printInInsertionOrder(root->left, queue);
+    printInInsertionOrder(root->right, queue);
+}
+
+// Função principal para teste
 int main() {
-    struct Node* top = NULL;
-    initialize(&top);
+    struct Node* root = init();
+    struct Queue* queue = NULL;
 
-    // Inserir elementos na pilha
-    push(&top, 10);
-    push(&top, 20);
-    push(&top, 30);
+    // Inserindo nós
+    root = insert(root, 15);
+    root = insert(root, 30);
+    root = insert(root, 70);
+    root = insert(root, 20);
+    root = insert(root, 40);
+    root = insert(root, 60);
+    root = insert(root, 80);
 
-    // Exibir a pilha
-    printStack(top);
+    printf("Valores na ordem de inserção: ");
+    printInInsertionOrder(root, &queue);
 
-    // Remover o elemento do topo
-    int poppedElement = pop(&top);
-    printf("Elemento removido: %d\n", poppedElement);
+    // Imprime os valores na fila (na ordem em que foram inseridos)
+    printQueue(queue);
+    printf("\n");
 
-    // Exibir a pilha novamente
-    printStack(top);
+    // Inverte a fila
+    reverseQueue(&queue);
 
-    // Reinicializar a pilha
-    reinitialize(&top);
-    printStack(top);
+    printf("Valores na ordem inversa de inserção: ");
+    printQueue(queue);
+    printf("\n");
 
     return 0;
 }
